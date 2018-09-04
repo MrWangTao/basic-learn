@@ -6,4 +6,5 @@
 out
 gen
 
-java-new-feature/target/
+*/target/
+*/src/test/
