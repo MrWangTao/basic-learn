@@ -1,5 +1,6 @@
-package com.wt.bl.dto;
+package com.wt.bl.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.wt.bl.enums.StatusEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,13 +18,15 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
-public class UserDTO {
+public class User {
 
     private String id;
     private String name;
     @NotBlank(message = "用户名不能为空")
     private String username;
     @NotBlank(message = "密码不能为空")
+    // 避免将密码返回给客户端
+//    @JsonIgnore
     private String password;
     private String salt;
     private StatusEnum statusEnum;

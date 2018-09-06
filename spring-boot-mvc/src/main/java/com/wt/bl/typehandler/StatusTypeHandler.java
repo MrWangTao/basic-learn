@@ -28,6 +28,12 @@ import java.sql.SQLException;
 @MappedTypes(ValuableEnum.class)
 public class StatusTypeHandler<E extends Enum<E> & ValuableEnum> extends BaseTypeHandler<E> {
 
+    private Class<E> clazz;
+
+    public StatusTypeHandler(Class<E> clazz) {
+        this.clazz = clazz;
+    }
+
     @Override
     public void setNonNullParameter(PreparedStatement ps, int i, E parameter, JdbcType jdbcType) throws SQLException {
         ps.setInt(i, parameter.getValue());
@@ -35,17 +41,17 @@ public class StatusTypeHandler<E extends Enum<E> & ValuableEnum> extends BaseTyp
 
     @Override
     public E getNullableResult(ResultSet rs, String columnName) throws SQLException {
-        return (E) rs.getObject(columnName);
+        return ValuableEnum.getEnum(clazz, rs.getInt(columnName));
     }
 
     @Override
     public E getNullableResult(ResultSet rs, int columnIndex) throws SQLException {
-        return (E) rs.getObject(columnIndex);
+        return ValuableEnum.getEnum(clazz, rs.getInt(columnIndex));
     }
 
     @Override
     public E getNullableResult(CallableStatement cs, int columnIndex) throws SQLException {
-        return (E) cs.getObject(columnIndex);
+        return ValuableEnum.getEnum(clazz, cs.getInt(columnIndex));
     }
 
     // 单个写法

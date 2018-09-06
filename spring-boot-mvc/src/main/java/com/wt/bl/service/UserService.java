@@ -1,6 +1,6 @@
 package com.wt.bl.service;
 
-import com.wt.bl.dto.UserDTO;
+import com.wt.bl.entity.User;
 
 /**
  * @author WangTao
@@ -8,6 +8,8 @@ import com.wt.bl.dto.UserDTO;
  */
 public interface UserService {
 
-    void addUser(UserDTO user);
+    void addUser(User user);
+
+    User findByUsername(String username);
 
 }

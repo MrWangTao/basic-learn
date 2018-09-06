@@ -1,12 +1,9 @@
 package com.wt.bl.controller;
 
-import com.wt.bl.dto.UserDTO;
+import com.wt.bl.entity.User;
 import com.wt.bl.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 
@@ -15,7 +12,7 @@ import javax.validation.Valid;
  *         Created at 18/9/3 下午1:15.
  */
 @RestController
-@RequestMapping("/api/v1/users")
+@RequestMapping("/user")
 public class UserController {
 
     /*@PostMapping
@@ -28,9 +25,14 @@ public class UserController {
     private UserService userService;
 
     @PostMapping
-    public String addUser(@RequestBody @Valid UserDTO user) {
+    public String addUser(@RequestBody @Valid User user) {
         userService.addUser(user);
         return "success";
+    }
+
+    @GetMapping("/selectOne")
+    public User findUserByUsernae(String username) {
+        return userService.findByUsername(username);
     }
 
 }
