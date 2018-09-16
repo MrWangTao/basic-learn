@@ -58,7 +58,7 @@ public class MyShiroRealm1 extends AuthorizingRealm {
                  */
 //                Session session = SecurityUtils.getSubject().getSession();
 //                session.setAttribute(user.getUsername(), user);
-                SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(user, user.getPassword(), new SimpleByteSource(user.getSalt().getBytes()), getName());
+                SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(user.getUsername(), user.getPassword(), new SimpleByteSource(user.getSalt().getBytes()), getName());
 //                SimpleAuthenticationInfo authenticationInfo = new SimpleAuthenticationInfo(user, user.getPassword(), this.getName());
                 super.clearCachedAuthorizationInfo(authenticationInfo.getPrincipals());
                 SecurityUtils.getSubject().getSession().setAttribute("login", user);

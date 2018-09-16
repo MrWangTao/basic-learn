@@ -59,7 +59,12 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
-
+		<!-- redis用做缓存 -->
+		<dependency>
+			<groupId>org.crazycake</groupId>
+			<artifactId>shiro-redis</artifactId>
+			<version>2.4.2.1-RELEASE</version>
+		</dependency>
 		<!-- shior相关jar包 -->
 		<!-- https://mvnrepository.com/artifact/org.apache.shiro/shiro-spring -->
 		<dependency>
@@ -67,6 +72,14 @@
 			<artifactId>shiro-spring</artifactId>
 			<version>1.4.0</version>
 		</dependency>
+		<!-- imgToPdf -->
+		<!-- https://mvnrepository.com/artifact/com.itextpdf/itextpdf -->
+		<dependency>
+			<groupId>com.itextpdf</groupId>
+			<artifactId>itextpdf</artifactId>
+			<version>5.5.10</version>
+		</dependency>
+
 
 	</dependencies>
 

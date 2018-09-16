@@ -1,6 +1,7 @@
 package com.wt.bl.shiro;
 
 import org.apache.shiro.authc.credential.HashedCredentialsMatcher;
+import org.apache.shiro.cache.CacheManager;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.session.mgt.DefaultSessionManager;
 import org.apache.shiro.session.mgt.eis.EnterpriseCacheSessionDAO;
@@ -8,10 +9,15 @@ import org.apache.shiro.session.mgt.eis.JavaUuidSessionIdGenerator;
 import org.apache.shiro.session.mgt.eis.MemorySessionDAO;
 import org.apache.shiro.spring.web.ShiroFilterFactoryBean;
 import org.apache.shiro.web.mgt.DefaultWebSecurityManager;
+import org.apache.shiro.web.servlet.SimpleCookie;
 import org.apache.shiro.web.session.mgt.DefaultWebSessionManager;
+import org.crazycake.shiro.RedisCacheManager;
+import org.crazycake.shiro.RedisManager;
+import org.springframework.cache.config.CacheManagementConfigUtils;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.servlet.Filter;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -80,7 +86,7 @@ public class ShiroConfig {
         // 如果一旦配置了sessionmanager就导致即使登录成功也无法访问要授权的页面
         // 这里需要使用 DefaultWebSessionManager类， 否则就会上述错误
         // securityManager.setSessionManager(sessionManager());
-        securityManager.setSessionManager(new DefaultWebSessionManager());
+        securityManager.setSessionManager(webSessionManager());
         return securityManager;
     }
 
@@ -96,12 +102,13 @@ public class ShiroConfig {
 
         // TODO 这部分应该可以在MyShiroRealm中判断是否有权限
         // 可以实现一些自定义的过滤器
-       /* Map<String, Filter> filters = new LinkedHashMap<String, Filter>();
-        LogoutFilter logoutFilter = new LogoutFilter();
+        Map<String, Filter> filters = new LinkedHashMap<String, Filter>();
+        filters.put("kickout", kickoutSessionControlFilter());
+        /*LogoutFilter logoutFilter = new LogoutFilter();
         logoutFilter.setRedirectUrl("/login");
         filters.put("logout", null);
-        filters.put("authc", new MyFormFilter());
-        factoryBean.setFilters(filters);*/
+        filters.put("authc", new MyFormFilter());*/
+        factoryBean.setFilters(filters);
 
         Map<String, String> chainFilters = new LinkedHashMap<String, String>();
         chainFilters.put("/logout", "logout");
@@ -110,7 +117,7 @@ public class ShiroConfig {
 //        chainFilters.put("/**", "anon");
         chainFilters.put("/login", "anon");
         chainFilters.put("/index", "anon");
-        chainFilters.put("/**", "authc");
+        chainFilters.put("/**", "authc,kickout");
         factoryBean.setSuccessUrl("/index");
         factoryBean.setUnauthorizedUrl("/403");
         factoryBean.setLoginUrl("/login_page");
@@ -150,7 +157,7 @@ public class ShiroConfig {
      * 3：DefaultWebSessionManager：用于Web环境的实现，可以替代ServletContainerSessionManager，自己维护着会话，直接 **废弃了** Servlet容器的会话管理。
      *
      */
-    @Bean
+    /*@Bean
     public DefaultSessionManager sessionManager() {
 //        DefaultSessionManager sessionManager = new DefaultSessionManager();
 //        // 设置过期时间: 单位ms， 默认设置的30分钟
@@ -163,8 +170,69 @@ public class ShiroConfig {
 //        enterpriseCacheSessionDAO.setSessionIdGenerator(new JavaUuidSessionIdGenerator());
 //        enterpriseCacheSessionDAO.setActiveSessionsCacheName("active-shiro");
 //        sessionManager.setSessionDAO(new EnterpriseCacheSessionDAO());
+        DefaultSessionManager sessionManager = new DefaultSessionManager();
         return new DefaultSessionManager();
+    }*/
+
+    /**
+     * 只所以出现这个问题是因为在shiro的DefaultWebSessionManager类中，默认Cookie名称是JSESSIONID，
+     * 这样的话与servlet容器名冲突, 如jetty, tomcat等默认JSESSIONID,
+     * 当跳出shiro servlet时如error-page容器会为JSESSIONID重新分配值导致登录会话丢失!
+     * 如果不进行配置就会出现以下错误
+     * org.apache.shiro.session.UnknownSessionException: There is no session with id [xxxx]
+     *
+     * @return
+     */
+    @Bean
+    public DefaultWebSessionManager webSessionManager() {
+        DefaultWebSessionManager webSessionManager = new DefaultWebSessionManager();
+        webSessionManager.setSessionIdCookie(simpleCookie());
+        return webSessionManager;
     }
+
+    @Bean
+    public SimpleCookie simpleCookie() {
+        SimpleCookie simpleCookie = new SimpleCookie();
+        simpleCookie.setName("shiro-cookie");
+        simpleCookie.setPath("/");
+        return simpleCookie;
+    }
+
+    @Bean
+    public KickOutSessionControllFilter kickoutSessionControlFilter(){
+        KickOutSessionControllFilter kickoutSessionControlFilter = new KickOutSessionControllFilter();
+        //使用cacheManager获取相应的cache来缓存用户登录的会话；用于保存用户—会话之间的关系的；
+        //这里我们还是用之前shiro使用的redisManager()实现的cacheManager()缓存管理
+        //也可以重新另写一个，重新配置缓存时间之类的自定义缓存属性
+        kickoutSessionControlFilter.setCache(cacheManager());
+        //用于根据会话ID，获取会话进行踢出操作的；
+        kickoutSessionControlFilter.setSessionManager(webSessionManager());
+        //是否踢出后来登录的，默认是false；即后者登录的用户踢出前者登录的用户；踢出顺序。
+        kickoutSessionControlFilter.setKickoutAfter(false);
+        //同一个用户最大的会话数，默认1；比如2的意思是同一个用户允许最多同时两个人登录；
+        kickoutSessionControlFilter.setMaxSession(1);
+        //被踢出后重定向到的地址；
+        kickoutSessionControlFilter.setKickoutUrl("/login_page");
+        return kickoutSessionControlFilter;
+    }
+
+    /**
+     * 设置缓存管理器，可以是cache、redis等缓存
+     * @return
+     */
+    @Bean
+    public RedisCacheManager cacheManager() {
+        RedisCacheManager redisCacheManager = new RedisCacheManager();
+        redisCacheManager.setRedisManager(redisManager());
+        return redisCacheManager;
+    }
+
+    @Bean
+    public RedisManager redisManager() {
+        return new RedisManager();
+    }
+
+
 
 }
 
