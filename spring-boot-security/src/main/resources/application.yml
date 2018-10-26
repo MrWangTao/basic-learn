@@ -1,0 +1,16 @@
+servlet:
+  port: 8881
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/bl?useUnicode=true&characterEncoding=utf8
+    username: root
+    password: root
+    driver-class-name: com.mysql.jdbc.Driver
+  redis:
+    database: 0
+    host: localhost
+    port: 6379
+mybatis:
+  mapper-locations: classpath:mapper/**.xml
+  type-aliases-package: com.wt.bl.entity
+  type-handlers-package: com.wt.bl.typehandler
