@@ -6,6 +6,7 @@ import com.wt.bl.service.UserService;
 import org.apache.shiro.crypto.hash.SimpleHash;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -13,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -27,6 +29,10 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void addUser(User user) {
+        User byUsername = findByUsername("");
+        if (Objects.isNull(byUsername)) {
+            throw new RuntimeException("");
+        }
         String id = UUID.randomUUID().toString().replace("-", "");
         SimpleHash md5 = new SimpleHash("MD5", user.getPassword(), user.getSalt(), 2);
         user.setPassword(md5.toString());
@@ -34,9 +40,17 @@ public class UserServiceImpl implements UserService {
         userMapper.addUser(user.toBuilder().id(id).gmtCreate(now).gmtModified(now).build());
     }
 
+    @Transactional
     @Override
     public User findByUsername(String username) {
-        return userMapper.findByUsername(username);
+        String id = UUID.randomUUID().toString().replace("-", "");
+        User user = User.builder().username("ceshi1").name("测试一").password("123456").salt("ceshi1").build();
+        SimpleHash md5 = new SimpleHash("MD5", user.getPassword(), user.getSalt(), 2);
+        user.setPassword(md5.toString());
+        LocalDateTime now = LocalDateTime.now();
+        userMapper.addUser(user.toBuilder().id(id).gmtCreate(now).gmtModified(now).build());
+        return null;
+//        return userMapper.findByUsername(username);
     }
 
 
